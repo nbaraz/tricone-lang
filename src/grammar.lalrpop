@@ -1,0 +1,51 @@
+use std::str::FromStr;
+use ast::{Expr, BinOp, Block, Ident, Item};
+
+grammar;
+
+pub Function: Item = {
+    "func" <name:Ident> "(" <params: Comma<Ident>> ")" <body:Block> => Item::Func{<>},
+}
+
+pub Expr = Tier<ExprOp, Factor>;
+Factor = Tier<FactorOp, Term>;
+
+ExprOp: BinOp = {
+    "+" => BinOp::Add,
+    "-" => BinOp::Sub,
+};
+FactorOp: BinOp = {
+    "*" => BinOp::Mul,
+    "/" => BinOp::Div,
+};
+
+Block: Block = "{" <SemiColon<Expr>> "}" => Block(<>);
+
+pub Term: Expr = {
+    <Num> => Expr::Num(<>),
+    <Ident> => Expr::Ident(<>),
+    "(" <Expr> ")",
+    <Block> => Expr::Block(<>),
+};
+
+Num: i32 = <r"[0-9]+"> => i32::from_str(<>).unwrap();
+Ident: Ident = <r"[[:alpha:]]\w*"> => Ident(String::from(<>));
+
+Tier<Op, NextTier>: Expr = {
+    Tier<Op, NextTier> Op NextTier => Expr::new_op(<>),
+    NextTier,
+};
+
+Comma<T> = Delimited<T, ",">;
+SemiColon<T> = Delimited<T, ";">;
+
+Delimited<T, S>: Vec<T> = {
+    <v:(<T> S)*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
