@@ -2,6 +2,7 @@ extern crate lalrpop_util;
 
 pub mod ast;
 pub mod grammar;
+pub mod codegen;
 pub mod instruction;
 
 #[cfg(test)]
