@@ -1,13 +1,37 @@
 use std::str::FromStr;
-use ast::{Expr, BinOp, Block, Ident, Item};
+use ast::{Expr, BinOp, Block, Ident, Item, Func};
 
 grammar;
 
-pub Function: Item = {
-    "func" <name:Ident> "(" <params: Comma<Ident>> ")" <body:Block> => Item::Func{<>},
-}
+pub Module: Vec<Item> = {
+    <Item*>
+};
 
-pub Expr = Tier<ExprOp, Factor>;
+pub Item: Item = {
+    <Function> => Item::Func(<>),
+    <Type>
+};
+
+pub Type: Item = {
+    "type" <name:Ident> "{" <methods:Function*> "}" => Item::Type{<>},
+};
+
+pub Function: Func = {
+    "func" <name:Ident> "(" <params: Comma<Ident>> ")" <body:Block> => Func{<>},
+};
+
+pub Statement: Expr = {
+    <Ident> "=" <Expr> => Expr::new_assign(<>),
+    <Expr>,
+};
+
+pub Expr: Expr = {
+    <ArithExpr>,
+    <Term> "." <Ident> => Expr::new_attrlookup(<>),
+    <Expr> "(" <Comma<Expr>> ")" => Expr::new_call(<>),
+};
+
+ArithExpr = Tier<ExprOp, Factor>;
 Factor = Tier<FactorOp, Term>;
 
 ExprOp: BinOp = {
@@ -19,7 +43,7 @@ FactorOp: BinOp = {
     "/" => BinOp::Div,
 };
 
-Block: Block = "{" <SemiColon<Expr>> "}" => Block(<>);
+Block: Block = "{" <SemiColon<Statement>> "}" => Block(<>);
 
 pub Term: Expr = {
     <Num> => Expr::Num(<>),
