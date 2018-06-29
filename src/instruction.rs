@@ -38,4 +38,5 @@ pub enum Instruction {
     },
     Diag,
     DebugPrintObject,
+    Pop,
 }
